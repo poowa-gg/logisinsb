@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #1A1A1A;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#0F6E56] text-white font-semibold rounded-xl px-6 py-3 min-h-[48px] flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#0A5240] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-secondary {
+    @apply border-2 border-[#0F6E56] text-[#0F6E56] font-semibold rounded-xl px-6 py-3 min-h-[48px] flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#E6F3EF] active:scale-95;
+  }
+  
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-4;
+  }
+  
+  .input-field {
+    @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-[#1A1A1A] text-base focus:outline-none focus:ring-2 focus:ring-[#0F6E56] focus:border-transparent transition-all duration-150 placeholder-gray-400;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
+  }
+}
+
+/* Auth background pattern */
+.auth-bg {
+  background-color: #f8fbfa;
+  background-image: 
+    radial-gradient(circle, #0F6E5615 1px, transparent 1px),
+    radial-gradient(circle, #0F6E5608 2px, transparent 2px);
+  background-size: 30px 30px, 90px 90px;
+  background-position: 0 0, 15px 15px;
+}
+
+/* Route line decoration */
+.route-decoration::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    #0F6E5630 0px,
+    #0F6E5630 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  transform: translateY(-50%);
+}
+
+/* Timeline connector */
+.timeline-line {
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #0F6E56, #e5e7eb);
+}
+
+/* Pulse animation for active status */
+@keyframes pulse-teal {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(15, 110, 86, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(15, 110, 86, 0); }
+}
+
+.pulse-active {
+  animation: pulse-teal 2s infinite;
+}
+
+/* Smooth fade in */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 cursor-pointer;
+}
+
+.toggle-switch-thumb {
+  @apply inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200;
+}
