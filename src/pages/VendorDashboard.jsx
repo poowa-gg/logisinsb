@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import StatusBadge from '../components/StatusBadge'
+import { EmptyState, ErrorBanner } from '../components/UIStates'
 import {
   Package, Plus, MapPin, Calendar, ExternalLink,
-  RefreshCw, Inbox, DollarSign
+  RefreshCw, DollarSign
 } from 'lucide-react'
 
 function formatCurrency(n) {
@@ -128,14 +129,13 @@ export default function VendorDashboard() {
             <p className="text-sm">Loading shipments…</p>
           </div>
         ) : shipments.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <Inbox size={48} className="text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">No shipments yet</h3>
-            <p className="text-sm text-gray-400 mb-5">Create your first shipment to get started</p>
-            <button onClick={() => navigate('/home')} className="btn-primary mx-auto">
-              <Plus size={16} /> Create Shipment
-            </button>
-          </div>
+          <EmptyState
+            icon={Package}
+            title="No shipments yet"
+            desc="Create your first shipment to get started"
+            action={() => navigate('/home')}
+            actionLabel="+ Create Shipment"
+          />
         ) : (
           <div className="space-y-3">
             {shipments.map(s => (
