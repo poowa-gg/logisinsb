@@ -10,6 +10,7 @@ import PartnerDashboard from './pages/PartnerDashboard'
 import TrackPage from './pages/TrackPage'
 import OnboardingPage from './pages/OnboardingPage'
 import NotFoundPage from './pages/NotFoundPage'
+import AdminPanel from './pages/AdminPanel'
 
 // Full-screen loader
 function Loader() {
@@ -30,6 +31,7 @@ function RoleRedirect() {
   if (!user)   return <Navigate to="/login" replace />
 
   const role = profile?.role || user?.user_metadata?.role
+  if (role === 'admin')              return <Navigate to="/admin"   replace />
   if (role === 'vendor')             return <Navigate to="/vendor"  replace />
   if (role === 'logistics_partner')  return <Navigate to="/partner" replace />
   return <Navigate to="/home" replace />
@@ -83,6 +85,11 @@ export default function App() {
           <Route path="/partner" element={
             <Protected roles={['logistics_partner', 'admin']}>
               <PartnerDashboard />
+            </Protected>
+          } />
+          <Route path="/admin" element={
+            <Protected roles={['admin']}>
+              <AdminPanel />
             </Protected>
           } />
 
