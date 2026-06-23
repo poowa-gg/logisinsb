@@ -11,42 +11,45 @@ import TrackPage from './pages/TrackPage'
 import OnboardingPage from './pages/OnboardingPage'
 import NotFoundPage from './pages/NotFoundPage'
 
-function RoleRouter() {
-  const { user, profile, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-4 border-[#0F6E56] border-t-transparent animate-spin" />
-          <p className="text-gray-500 font-medium">Loading Logistix…</p>
-        </div>
+// Full-screen loader
+function Loader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 rounded-full border-4 border-[#0F6E56] border-t-transparent animate-spin" />
+        <p className="text-sm text-gray-400 font-medium">Loading…</p>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
-  if (!user) return <Navigate to="/login" replace />
+// Decides where to send the user based on role
+function RoleRedirect() {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <Loader />
+  if (!user)   return <Navigate to="/login" replace />
 
-  if (profile?.role === 'vendor') return <Navigate to="/vendor" replace />
-  if (profile?.role === 'logistics_partner') return <Navigate to="/partner" replace />
+  const role = profile?.role || user?.user_metadata?.role
+  if (role === 'vendor')             return <Navigate to="/vendor"  replace />
+  if (role === 'logistics_partner')  return <Navigate to="/partner" replace />
   return <Navigate to="/home" replace />
 }
 
-function ProtectedRoute({ children, allowedRoles }) {
+// Protects a route — waits for auth to finish before deciding
+function Protected({ children, roles }) {
   const { user, profile, loading } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-12 h-12 rounded-full border-4 border-[#0F6E56] border-t-transparent animate-spin" />
-      </div>
-    )
-  }
+  if (loading) return <Loader />
+  if (!user)   return <Navigate to="/login" replace />
 
-  if (!user) return <Navigate to="/login" replace />
+  // Use metadata as fallback while DB profile loads
+  const role = profile?.role || user?.user_metadata?.role
 
-  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
-    return <RoleRouter />
+  if (roles && role && !roles.includes(role)) {
+    // Wrong role — send to correct dashboard
+    if (role === 'vendor')            return <Navigate to="/vendor"  replace />
+    if (role === 'logistics_partner') return <Navigate to="/partner" replace />
+    return <Navigate to="/home" replace />
   }
 
   return children
@@ -57,40 +60,31 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/track/:shipmentId" element={<TrackPage />} />
+          {/* Public */}
+          <Route path="/login"        element={<LoginPage />} />
+          <Route path="/register"     element={<RegisterPage />} />
           <Route path="/how-it-works" element={<OnboardingPage />} />
+          <Route path="/track/:shipmentId" element={<TrackPage />} />
 
-          {/* Role redirect */}
-          <Route path="/" element={<RoleRouter />} />
+          {/* Role-based redirect from root */}
+          <Route path="/" element={<RoleRedirect />} />
 
-          {/* Protected routes */}
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute allowedRoles={['buyer', 'vendor', 'admin']}>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/vendor"
-            element={
-              <ProtectedRoute allowedRoles={['vendor', 'admin']}>
-                <VendorDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/partner"
-            element={
-              <ProtectedRoute allowedRoles={['logistics_partner', 'admin']}>
-                <PartnerDashboard />
-              </ProtectedRoute>
-            }
-          />
+          {/* Protected */}
+          <Route path="/home" element={
+            <Protected roles={['buyer', 'vendor', 'admin']}>
+              <HomePage />
+            </Protected>
+          } />
+          <Route path="/vendor" element={
+            <Protected roles={['vendor', 'admin']}>
+              <VendorDashboard />
+            </Protected>
+          } />
+          <Route path="/partner" element={
+            <Protected roles={['logistics_partner', 'admin']}>
+              <PartnerDashboard />
+            </Protected>
+          } />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

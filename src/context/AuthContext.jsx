@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
@@ -7,53 +7,57 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const fetchingRef = useRef(false)  // prevent duplicate fetches
 
+  // Build a profile object from auth user metadata (instant, no DB needed)
+  function profileFromMeta(u) {
+    if (!u) return null
+    const m = u.user_metadata || {}
+    return {
+      id:     u.id,
+      name:   m.name  || u.email?.split('@')[0] || 'User',
+      email:  u.email || '',
+      phone:  m.phone || '',
+      role:   m.role  || 'buyer',
+      status: 'active',
+    }
+  }
+
+  // Fetch full profile from DB and merge (runs in background)
   async function fetchProfile(userId) {
-    if (fetchingRef.current) return
-    fetchingRef.current = true
     try {
       const { data, error } = await supabase
         .from('users')
         .select('id, name, email, phone, role, status')
         .eq('id', userId)
-        .maybeSingle()          // maybeSingle won't error if row missing
-      if (!error && data) setProfile(data)
-      return data
-    } finally {
-      fetchingRef.current = false
+        .maybeSingle()
+      if (!error && data) {
+        setProfile(data)
+        return data
+      }
+    } catch (e) {
+      // Non-fatal — metadata profile is already set
     }
+    return null
   }
 
   useEffect(() => {
-    // Get session once on mount — no loading spinner delay
+    // 1. Get current session immediately
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null
       setUser(u)
+
       if (u) {
-        // Check if profile is in user_metadata first (instant, no DB round-trip)
-        const meta = u.user_metadata
-        if (meta?.role) {
-          setProfile({
-            id:    u.id,
-            name:  meta.name  || '',
-            email: u.email    || '',
-            phone: meta.phone || '',
-            role:  meta.role,
-            status: 'active',
-          })
-          setLoading(false)
-          // Sync from DB in background (non-blocking)
-          fetchProfile(u.id)
-        } else {
-          fetchProfile(u.id).finally(() => setLoading(false))
-        }
+        // Set profile from metadata instantly — no loading delay
+        setProfile(profileFromMeta(u))
+        setLoading(false)
+        // Sync from DB in background
+        fetchProfile(u.id)
       } else {
         setLoading(false)
       }
     })
 
-    // Auth state changes (login / logout / token refresh)
+    // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         const u = session?.user ?? null
@@ -66,22 +70,13 @@ export function AuthProvider({ children }) {
         }
 
         if (u) {
-          // Use metadata immediately for instant render
-          const meta = u.user_metadata
-          if (meta?.role) {
-            setProfile(prev => prev ?? {
-              id:    u.id,
-              name:  meta.name  || '',
-              email: u.email    || '',
-              phone: meta.phone || '',
-              role:  meta.role,
-              status: 'active',
-            })
-          }
+          // Always set from metadata first for instant render
+          setProfile(prev => prev?.id === u.id ? prev : profileFromMeta(u))
           setLoading(false)
-          // Sync DB profile in background
+          // Background DB sync
           fetchProfile(u.id)
         } else {
+          setProfile(null)
           setLoading(false)
         }
       }
@@ -91,8 +86,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function signOut() {
-    setProfile(null)
     setUser(null)
+    setProfile(null)
     await supabase.auth.signOut()
   }
 
