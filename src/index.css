@@ -5,6 +5,12 @@
 @layer base {
   * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    /* iOS momentum scrolling */
+    -webkit-overflow-scrolling: touch;
   }
   
   body {
@@ -13,6 +19,13 @@
     background: #ffffff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Safe area for notched phones */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Fix 100vh on mobile browsers (address bar eats space) */
+  .min-h-screen {
+    min-height: 100dvh;
   }
 }
 
